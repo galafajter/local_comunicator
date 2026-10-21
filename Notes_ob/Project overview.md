@@ -1,0 +1,3 @@
+# 1. Opis projektu
+
+System komunikatora wraz z lokalnym social medium łączącym ludzi znajdujących się w tym samym czasie i przestrzeni bez pośrednictwa serwera ani dostępu do internetu. Podstawą będzie technologia wifi aware albo lokalny BTE pozwalający odnajdywać i łączyć urządzenia w pobliżu, głównie telefony z androidem, potencjalnie cross-platform. Ideą wiodącą jest efemeryczność i ulotność tego social medium jako dodatkowej warstwy cyfrowej uzupełniającej rzeczywistość a nie będącej tworem osobnym, niezależnym, w tradycyjnym rozumieniu miedów społecznościowych.
