@@ -31,12 +31,16 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_LOCAL_NETWORK,
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
             Build.VERSION.SDK_INT >= 31 -> arrayOf(
                 Manifest.permission.ACCESS_COARSE_LOCATION, // Uprawnienie brakujące przy błędzie 8034.
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_LOCAL_NETWORK,
                 Manifest.permission.BLUETOOTH_SCAN
             )
             else -> arrayOf(
@@ -150,6 +154,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun discover() {
+
         val options = DiscoveryOptions.Builder().setStrategy(strategy).build()
         client.startDiscovery(serviceId, object : EndpointDiscoveryCallback() {
             override fun onEndpointFound(id: String, info: DiscoveredEndpointInfo) {
