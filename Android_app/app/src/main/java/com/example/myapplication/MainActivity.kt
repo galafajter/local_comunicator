@@ -13,6 +13,8 @@ import androidx.activity.ComponentActivity
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.tasks.Task
+import android.view.View
+import android.widget.ScrollView
 
 
 class MainActivity : ComponentActivity() {
@@ -23,6 +25,26 @@ class MainActivity : ComponentActivity() {
     private lateinit var status: TextView
     private lateinit var input: EditText
     private var connectedPeer: String? = null
+
+
+    private lateinit var errorLog: TextView
+    private lateinit var errorScroll: ScrollView
+    private lateinit var messageLog: TextView
+    private lateinit var messageScroll: ScrollView
+
+    private fun timestamp(): String =
+        java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+            .format(java.util.Date())
+
+    private fun addError(text: String) {
+        errorLog.append("[${timestamp()}] $text\n")
+        errorScroll.post { errorScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    private fun addMessage(text: String) {
+        messageLog.append("[${timestamp()}] $text\n")
+        messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }
+    }
 
     private val permissions: Array<String>
         get() = when {
@@ -48,30 +70,36 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
         }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER // Wyśrodkuj elementy w obu osiach.
-            setPadding(24, 24, 24, 24) // Zachowaj odstęp od krawędzi ekranu.
-        }
-
-        status = TextView(this).apply {
-            text = "Laya: gotowa do testu"
-            textSize = 18f
             gravity = android.view.Gravity.CENTER
-        }
-        input = EditText(this).apply {
-            hint = "Wpisz wiadomość"
-            textSize = 16f
+            setPadding(24, 24, 24, 24)
         }
 
-        layout.addView(status, LinearLayout.LayoutParams(
+        // Log błędów — około 5 wierszy
+        layout.addView(TextView(this).apply {
+            text = "Log błędów"
+            textSize = 14f
+        })
+
+        errorLog = TextView(this).apply {
+            textSize = 12f
+            setPadding(8, 4, 8, 4)
+        }
+        errorScroll = ScrollView(this).apply {
+            addView(errorLog)
+            isFillViewport = true
+        }
+        layout.addView(errorScroll, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = 24 })
+            (100 * resources.displayMetrics.density).toInt()
+        ))
 
+        // Funkcja tworząca przyciski
         fun addButton(label: String, action: () -> Unit) {
             layout.addView(Button(this).apply {
                 text = label
@@ -79,21 +107,58 @@ class MainActivity : ComponentActivity() {
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 12 })
+            ).apply { bottomMargin = 8 })
         }
 
-        addButton("Udostępniaj urządzenie") { withPermissions { advertise() } }
-        addButton("Szukaj urządzeń") { withPermissions { discover() } }
+        // Status aplikacji
+        status = TextView(this).apply {
+            text = "Laya: gotowa do testu"
+            textSize = 18f
+            gravity = android.view.Gravity.CENTER
+        }
+        layout.addView(status)
 
+        // Przyciski połączenia
+        addButton("Udostępniaj urządzenie") {
+            withPermissions { advertise() }
+        }
+        addButton("Szukaj urządzeń") {
+            withPermissions { discover() }
+        }
+
+        // Pole wiadomości i przycisk wysyłania
+        input = EditText(this).apply {
+            hint = "Wpisz wiadomość"
+            textSize = 16f
+        }
         layout.addView(input, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = 8; bottomMargin = 12 })
+        ))
 
         addButton("Wyślij wiadomość") { sendMessage() }
 
+        // Log wiadomości — zajmuje pozostałe miejsce
+        layout.addView(TextView(this).apply {
+            text = "Wiadomości"
+            textSize = 14f
+        })
+
+        messageLog = TextView(this).apply {
+            textSize = 14f
+            setPadding(8, 4, 8, 4)
+        }
+        messageScroll = ScrollView(this).apply {
+            addView(messageLog)
+        }
+        layout.addView(messageScroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+
         setContentView(layout)
     }
+
+
 
     private fun withPermissions(action: () -> Unit) {
         val missing = permissions.filter {
@@ -115,7 +180,7 @@ class MainActivity : ComponentActivity() {
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             payload.asBytes()?.let {
-                runOnUiThread { status.text = "Odebrano: ${String(it, Charsets.UTF_8)}" }
+                runOnUiThread { addMessage("Odebrano: ${String(it, Charsets.UTF_8)}") }
             }
         }
 
@@ -150,7 +215,7 @@ class MainActivity : ComponentActivity() {
         val options = AdvertisingOptions.Builder().setStrategy(strategy).build()
         client.startAdvertising("Laya-${Build.MODEL}", serviceId, connectionLifecycle, options)
             .addOnSuccessListener { status.text = "Udostępniam urządzenie..." }
-            .addOnFailureListener { status.text = "Błąd reklamowania: ${it.message}" }
+            .addOnFailureListener {  addError("Błąd reklamowania: ${it.message}") }
     }
 
     private fun discover() {
@@ -194,3 +259,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 }
+
+private val Int.dp: Int
+    get() = (this * android.content.res.Resources.getSystem()
+        .displayMetrics.density).toInt()
