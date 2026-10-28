@@ -14,6 +14,7 @@ import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.android.gms.tasks.Task
 
+
 class MainActivity : ComponentActivity() {
 
     private val client by lazy { Nearby.getConnectionsClient(this) }
@@ -26,41 +27,67 @@ class MainActivity : ComponentActivity() {
     private val permissions: Array<String>
         get() = when {
             Build.VERSION.SDK_INT >= 33 -> arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION, // Wymagane przez Nearby na Twojej konfiguracji.
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.NEARBY_WIFI_DEVICES
             )
             Build.VERSION.SDK_INT >= 31 -> arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION, // Uprawnienie brakujące przy błędzie 8034.
                 Manifest.permission.BLUETOOTH_ADVERTISE,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN
             )
-            else -> arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            else -> arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
         }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 48, 32, 32)
+            gravity = android.view.Gravity.CENTER // Wyśrodkuj elementy w obu osiach.
+            setPadding(24, 24, 24, 24) // Zachowaj odstęp od krawędzi ekranu.
         }
-        status = TextView(this).apply { text = "Laya: gotowa do testu" }
-        input = EditText(this).apply { hint = "Wpisz wiadomość" }
+
+        status = TextView(this).apply {
+            text = "Laya: gotowa do testu"
+            textSize = 18f
+            gravity = android.view.Gravity.CENTER
+        }
+        input = EditText(this).apply {
+            hint = "Wpisz wiadomość"
+            textSize = 16f
+        }
+
+        layout.addView(status, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = 24 })
 
         fun addButton(label: String, action: () -> Unit) {
             layout.addView(Button(this).apply {
                 text = label
                 setOnClickListener { action() }
-            })
+            }, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 12 })
         }
 
-        layout.addView(status)
         addButton("Udostępniaj urządzenie") { withPermissions { advertise() } }
         addButton("Szukaj urządzeń") { withPermissions { discover() } }
-        layout.addView(input)
+
+        layout.addView(input, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = 8; bottomMargin = 12 })
+
         addButton("Wyślij wiadomość") { sendMessage() }
+
         setContentView(layout)
     }
 
